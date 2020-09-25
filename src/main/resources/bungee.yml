@@ -1,0 +1,4 @@
+name: BungeeDiscordChatV2
+version: ${project.version}
+main: jp.mkserver.bungeediscordchatv2.BungeeDiscordChatV2
+description: BungeeDiscordChatV2

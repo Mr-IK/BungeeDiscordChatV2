@@ -1,0 +1,23 @@
+#プラグイン動作
+power: true
+#DiscordBOTトークン
+token: ''
+#Discordチャンネルid
+channel_id:
+#日本語化
+lunachat: true
+#webhookURL
+webhooks:
+  - ''
+  - ''
+  - ''
+  - ''
+#必須: データベース設定
+db:
+  sqlite: false
+  mysql:
+    host: localhost
+    port: 3306
+    user: root
+    pass: password
+    db: bdiscordv2
