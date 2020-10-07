@@ -19,6 +19,8 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DiscordAPI extends ListenerAdapter {
 
@@ -49,6 +51,7 @@ public class DiscordAPI extends ListenerAdapter {
             em.setDescription(":ballot_box_with_check: **サーバーが起動しました**");
             em.setColor(Color.CYAN);
             sendMessage(em);
+            startServerInfoTimer();
         } catch (LoginException | InterruptedException e) {
             jda = null;
             e.printStackTrace();
@@ -252,9 +255,9 @@ public class DiscordAPI extends ListenerAdapter {
         }
         ProxiedPlayer p = ProxyServer.getInstance().getPlayer(uuid);
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        builder.setUsername(p.getName()+"@"+servername+"サーバー"); // use this username
+        builder.setUsername("["+servername+"] "+p.getName()); // use this username
         builder.setAvatarUrl(skinURL(uuid)); // use this avatar
-        builder.setContent(colorCodeEscape(msg));
+        builder.setContent(colorCodeEscape(msg).replaceAll("@everyone","エブリワン").replaceAll("@here","ヒア"));
         hooklist.get(hookcount).send(builder.build());
         hookcount++;
         if(hookcount==hooklist.size()){
@@ -263,6 +266,51 @@ public class DiscordAPI extends ListenerAdapter {
     }
 
     public String skinURL(UUID player_id){
-        return "http://cravatar.eu/head/"+player_id.toString()+"/128.png";
+        return "http://cravatar.eu/helmhead/"+player_id.toString()+"/128.png";
     }
+
+
+    public void setChannelTopic(String topic){
+        if(channel.getGuild().getMember(jda.getUserById(jda.getSelfUser().getIdLong())).getPermissions(channel).contains(Permission.MANAGE_CHANNEL)) {
+            channel.getManager().setTopic(topic).queue();
+        }
+    }
+
+    public void setPlayGame(String game){
+        jda.getPresence().setActivity(Activity.playing(game));
+    }
+
+    public void startServerInfoTimer(){
+        AtomicInteger count = new AtomicInteger();
+        ProxyServer.getInstance().getScheduler().schedule(plugin,()->{
+            setChannelTopic("プレイヤー数 "+ProxyServer.getInstance().getPlayers().size()+"/"+ProxyServer.getInstance().getConfig().getPlayerLimit()
+            +" | 起動から "+minIntToString(count.get()*5)+" |");
+            count.getAndIncrement();
+        },0,5, TimeUnit.MINUTES);
+    }
+
+    public String minIntToString(int min){
+        int hour = min/60;
+        int nmin = min%60;
+
+        if(hour>=24){
+            int day = hour/24;
+            hour = hour%24;
+
+            if(nmin==0){
+                return day + "日と" + hour+"時間";
+            }else if(hour==0){
+                return day + "日と" + min + "分";
+            }
+            return day + "日と" +hour+"時間"+min+"分";
+        }
+
+        if(nmin==0){
+            return hour+"時間";
+        }else if(hour==0){
+            return min+"分";
+        }
+        return hour+"時間"+min+"分";
+    }
+
 }
