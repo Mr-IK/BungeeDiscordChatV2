@@ -1,4 +1,4 @@
-package jp.mkserver.bungeediscordchatv2.sql.dbtypes;
+package jp.mkserver.bungeediscordchatv2.sql;
 
 import jp.mkserver.bungeediscordchatv2.sql.DBConnect;
 import net.md_5.bungee.api.plugin.Plugin;

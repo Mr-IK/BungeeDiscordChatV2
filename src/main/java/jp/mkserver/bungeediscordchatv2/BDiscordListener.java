@@ -52,7 +52,19 @@ public class BDiscordListener implements Listener {
             }
             ServerInfo info = ProxyServer.getInstance().getServerInfo(server);
             for ( ProxiedPlayer players : info.getPlayers() ) {
-                players.sendMessage(TextComponent.fromLegacyText("§9[§b"+sname+"§9] §e"+name+"§a: §r"+msg));
+
+                String colortype = "§9[§b"+sname+"§9] §e"+name+"§a: ";
+
+                if(plugin.hasPlayerCookie(players.getUniqueId())){
+                    BungeeDiscordChatV2.PlayerData pdata = plugin.getUserData(players.getUniqueId());
+                    if(pdata!=null&&pdata.colortype==1){
+                        colortype = "§d["+sname+"] "+name+": ";
+                    }else if(pdata!=null&&pdata.colortype==2){
+                        colortype = "§7[§e"+sname+"§7] §b"+name+"§a: ";
+                    }
+                }
+
+                players.sendMessage(TextComponent.fromLegacyText(colortype+"§r"+msg));
             }
         }
         ProxyServer.getInstance().getLogger().info("<"+name+"@"+sname+"> "+msg);

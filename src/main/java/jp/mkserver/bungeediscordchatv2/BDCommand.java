@@ -24,8 +24,9 @@ public class BDCommand extends Command {
         }
         if(args.length == 0) {
             plugin.sendMessage(p,plugin.prefix + "§2======ヘルプメニュー======");
-            plugin.sendMessage(p,plugin.prefix + "§6/bd link §f: Discordアカウントとマイクラをリンクします");
             plugin.sendMessage(p,plugin.prefix + "§6/bd info §f: リンク情報をチェックします");
+            plugin.sendMessage(p,plugin.prefix + "§6/bd msgcolor <0~2> §f: 他サーバーチャットの色を変更します 数字を外すと見本が見れます");
+            plugin.sendMessage(p,plugin.prefix + "§6/bd link §f: リンク申請を許可します");
             plugin.sendMessage(p,plugin.prefix + "§6/bd deny §f: リンク申請を拒否します");
             plugin.sendMessage(p,plugin.prefix + "§6/bd unlink §f: Discordアカウントとマイクラのリンクを削除します");
             if(p.hasPermission("bd.op")) {
@@ -36,7 +37,7 @@ public class BDCommand extends Command {
                 plugin.sendMessage(p,plugin.prefix+"§4§l機能停止中");
             }
             plugin.sendMessage(p,plugin.prefix+"§2========================");
-            plugin.sendMessage(p,plugin.prefix + "§c§lCreated by Mr_IK || v1.0.0");
+            plugin.sendMessage(p,plugin.prefix + "§c§lCreated by Mr_IK || v1.0");
             return;
         }else if(args.length == 1) {
             if (args[0].equalsIgnoreCase("link")) {
@@ -50,6 +51,19 @@ public class BDCommand extends Command {
                 return;
             } else if (args[0].equalsIgnoreCase("info")) {
                 plugin.showPlayerInfo(p);
+                return;
+            } else if (args[0].equalsIgnoreCase("msgcolor")) {
+                plugin.sendMessage(p,plugin.prefix + "§2======カラーコード見本======");
+                String sname = "サーバー名";
+                String name = "ユーザー名";
+                String colortype = "§e[0]: §9[§b"+sname+"§9] §e"+name+"§a: §rメッセージ";
+                plugin.sendMessage(p,colortype);
+                colortype = "§e[1]: §d["+sname+"] "+name+": §rメッセージ";
+                plugin.sendMessage(p,colortype);
+                colortype = "§e[2]: §7[§e"+sname+"§7] §b"+name+"§a: §rメッセージ";
+                plugin.sendMessage(p,colortype);
+                plugin.sendMessage(p,plugin.prefix+"§2========================");
+                plugin.sendMessage(p,plugin.prefix + "§c§lCreated by Mr_IK || v1.0");
                 return;
             }else if(args[0].equalsIgnoreCase("on")){
                 if(!p.hasPermission("bd.op")){
@@ -70,6 +84,11 @@ public class BDCommand extends Command {
                 plugin.config.getConfig().set("power",false);
                 plugin.config.saveConfig();
                 plugin.sendMessage(p,plugin.prefix+"§aBdiscordの機能を停止しました。");
+                return;
+            }
+        }else if(args.length == 2) {
+            if (args[0].equalsIgnoreCase("msgcolor")) {
+                plugin.colorChange(p,args);
                 return;
             }
         }

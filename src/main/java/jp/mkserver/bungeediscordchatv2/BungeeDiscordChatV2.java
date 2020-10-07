@@ -63,7 +63,22 @@ public final class BungeeDiscordChatV2 extends Plugin {
         discord.sendMessage(em);
     }
 
+    public boolean hasPlayerCookie(ProxiedPlayer p){
+        return cookie.containsKey(p.getUniqueId());
+    }
+
+    public boolean hasPlayerCookie(UUID p){
+        return cookie.containsKey(p);
+    }
+
+    public boolean hasUserCookie_(long p){
+        return cookie_.containsKey(p);
+    }
+
     public boolean containPlayerLink(UUID p_uuid){
+        if(hasPlayerCookie(p_uuid)){
+            return true;
+        }
         String exe = "SELECT * FROM link_data WHERE uuid = '" + p_uuid.toString() + "';";
         SQLManager.Query qu = sql.query(exe);
         ResultSet rs = qu.getRs();
@@ -85,13 +100,17 @@ public final class BungeeDiscordChatV2 extends Plugin {
 
     public void loadPlayer(ProxiedPlayer p){
         ProxyServer.getInstance().getScheduler().runAsync(this,()->{
-           if(containPlayerLink(p.getUniqueId())){
-               PlayerData data = getUserData(p.getUniqueId());
-               if(data!=null){
-                   cookie.put(p.getUniqueId(),data);
-                   cookie_.put(data.dis_id,data);
-               }
-           }
+            if(hasPlayerCookie(p)){
+                return;
+            }
+
+            if(containPlayerLink(p.getUniqueId())){
+                PlayerData data = getUserData(p.getUniqueId());
+                if(data!=null){
+                    cookie.put(p.getUniqueId(),data);
+                    cookie_.put(data.dis_id,data);
+                }
+            }
         });
     }
 
@@ -99,18 +118,15 @@ public final class BungeeDiscordChatV2 extends Plugin {
     public void loadPlayerAll(){
         ProxyServer.getInstance().getScheduler().runAsync(this,()->{
             for(ProxiedPlayer p : ProxyServer.getInstance().getPlayers()){
-                if(containPlayerLink(p.getUniqueId())){
-                    PlayerData data = getUserData(p.getUniqueId());
-                    if(data!=null){
-                        cookie.put(p.getUniqueId(),data);
-                        cookie_.put(data.dis_id,data);
-                    }
-                }
+                loadPlayer(p);
             }
         });
     }
 
     public boolean containUserLink(long dis_id){
+        if(hasUserCookie_(dis_id)){
+            return true;
+        }
         String exe = "SELECT * FROM link_data WHERE dis_id = " + dis_id + ";";
         SQLManager.Query qu = sql.query(exe);
         ResultSet rs = qu.getRs();
@@ -131,6 +147,9 @@ public final class BungeeDiscordChatV2 extends Plugin {
     }
 
     public PlayerData getUserData(UUID uuid){
+        if(hasPlayerCookie(uuid)){
+            return cookie.get(uuid);
+        }
         String exe = "SELECT * FROM link_data WHERE uuid = '" + uuid + "';";
         SQLManager.Query qu = sql.query(exe);
         ResultSet rs = qu.getRs();
@@ -141,6 +160,7 @@ public final class BungeeDiscordChatV2 extends Plugin {
                     data.name = rs.getString("name");
                     data.uuid = uuid;
                     data.dis_id = rs.getLong("dis_id");
+                    data.colortype = rs.getShort("colortype");
                     qu.close();
                     return data;
                 }
@@ -155,6 +175,9 @@ public final class BungeeDiscordChatV2 extends Plugin {
     }
 
     public PlayerData getUserData(long dis_id){
+        if(hasUserCookie_(dis_id)){
+            return cookie_.get(dis_id);
+        }
         String exe = "SELECT * FROM link_data WHERE dis_id = " + dis_id + ";";
         SQLManager.Query qu = sql.query(exe);
         ResultSet rs = qu.getRs();
@@ -165,6 +188,7 @@ public final class BungeeDiscordChatV2 extends Plugin {
                     data.name = rs.getString("name");
                     data.uuid = UUID.fromString(rs.getString("uuid"));
                     data.dis_id = dis_id;
+                    data.colortype = rs.getShort("colortype");
                     qu.close();
                     return data;
                 }
@@ -180,6 +204,9 @@ public final class BungeeDiscordChatV2 extends Plugin {
 
     public void putPlayerLink(String p_name,UUID p_uuid,long dis_id){
         ProxyServer.getInstance().getScheduler().runAsync(this,()->{
+            if(hasPlayerCookie(p_uuid)){
+                return;
+            }
             if(containPlayerLink(p_uuid)){
                 return;
             }
@@ -187,8 +214,10 @@ public final class BungeeDiscordChatV2 extends Plugin {
             data.uuid = p_uuid;
             data.name = p_name;
             data.dis_id = dis_id;
+            data.colortype = 0;
             cookie.put(p_uuid,data);
-            sql.execute("INSERT INTO link_data (name,uuid,dis_id)  VALUES ('"+p_name+"','"+p_uuid.toString()+"',"+dis_id+");");
+            cookie_.put(data.dis_id,data);
+            sql.execute("INSERT INTO link_data (name,uuid,dis_id,colortype)  VALUES ('"+p_name+"','"+p_uuid.toString()+"',"+dis_id+", "+0+");");
         });
     }
 
@@ -201,6 +230,22 @@ public final class BungeeDiscordChatV2 extends Plugin {
             cookie_.remove(id);
             cookie.remove(p_uuid);
             sql.execute("DELETE FROM link_data WHERE uuid = '"+p_uuid+"';");
+        });
+    }
+
+    public void updatePlayerColor(UUID p_uuid, short color){
+        ProxyServer.getInstance().getScheduler().runAsync(this,()->{
+            if(!containPlayerLink(p_uuid)){
+                return;
+            }
+            PlayerData data = cookie.get(p_uuid);
+            long id = data.dis_id;
+            cookie_.remove(id);
+            cookie.remove(p_uuid);
+            sql.execute("UPDATE link_data SET colortype = "+color+" WHERE uuid = '"+p_uuid+"';");
+            data.colortype = color;
+            cookie.put(p_uuid,data);
+            cookie_.put(data.dis_id,data);
         });
     }
 
@@ -266,6 +311,24 @@ public final class BungeeDiscordChatV2 extends Plugin {
         discord.sendMessage(discord.getUserFromLongId(dis_id),":warning: "+getPlayerName(p)+" さんはリンクを拒否しました。");
         linkInvite.remove(uuid);
     }
+    
+    public void colorChange(ProxiedPlayer p,String[] args){
+        ProxyServer.getInstance().getScheduler().runAsync(this,()-> {
+            if(!containPlayerLink(p.getUniqueId())){
+                sendMessage(p,prefix+"§cタイプ指定はDiscordとリンクしているプレイヤー限定の機能です！");
+                return;
+            }
+
+            if(args[1].equalsIgnoreCase("0")||args[1].equalsIgnoreCase("1")||args[1].equalsIgnoreCase("2")){
+                updatePlayerColor(p.getUniqueId(),Short.parseShort(args[1]));
+                sendMessage(p,prefix+"§aカラーコードタイプを §e"+args[1]+" §aにセットしました。");
+                return;
+            }
+
+            sendMessage(p,prefix+"§cタイプ指定が適切ではありません。 0~2の間で入力してください。");
+            return;
+        });
+    }
 
     public void showPlayerInfo(ProxiedPlayer p){
         ProxyServer.getInstance().getScheduler().runAsync(this,()-> {
@@ -307,5 +370,6 @@ public final class BungeeDiscordChatV2 extends Plugin {
         UUID uuid;
         String name;
         long dis_id;
+        short colortype;
     }
 }

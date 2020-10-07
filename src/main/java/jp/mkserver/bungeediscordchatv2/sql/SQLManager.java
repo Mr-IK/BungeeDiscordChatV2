@@ -1,8 +1,6 @@
 package jp.mkserver.bungeediscordchatv2.sql;
 
 import jp.mkserver.bungeediscordchatv2.Config;
-import jp.mkserver.bungeediscordchatv2.sql.dbtypes.Type_MySQL;
-import jp.mkserver.bungeediscordchatv2.sql.dbtypes.Type_SQLite;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 
@@ -93,7 +91,8 @@ public class SQLManager {
                 "time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
                 "uuid text, " +
                 "name text, "+
-                "dis_id bigint"+
+                "dis_id bigint,"+
+                "colortype SMALLINT"+
                 ");");
     }
 
